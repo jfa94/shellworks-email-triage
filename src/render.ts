@@ -1,6 +1,6 @@
 import { styleText } from "node:util";
 import type { Enquiry } from "./enquiry.ts";
-import type { Config } from "./config.ts";
+import { SALES, type Config } from "./config.ts";
 import type { Classified, Commitment, Timeline, Volume } from "./jev.ts";
 import type { Decision, Flag } from "./rules.ts";
 
@@ -120,7 +120,8 @@ export function renderCard(
   if (body.length > 0) row("Body", body);
   row("Type", typeLine(config, d));
 
-  if (d.signals && d.category && config.categories[d.category]!.outcome.kind === "buyer") {
+  const outcome = d.category ? config.categories[d.category]!.outcome : null;
+  if (d.signals && outcome?.kind === "route" && outcome.team === SALES) {
     const s = d.signals;
     row("Buyer", [VOLUME_LABEL[s.annual_volume.label as Volume], TIMELINE_LABEL[s.decision_timeline.label as Timeline], COMMITMENT_LABEL[s.commitment.label as Commitment]].join(" · "));
   }

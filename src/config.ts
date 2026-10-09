@@ -2,9 +2,11 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { CATEGORY_REPLIES, type CategoryReply } from "./replies.ts";
 
-// What a category leads to. "buyer" runs the buyer rules; "escalate" acts at any confidence.
+// The team whose routes are qualified by the buyer rules (information request, nurture) before Sales.
+export const SALES = "Sales";
+
+// What a category leads to. "escalate" acts at any confidence.
 export type Outcome =
-  | { kind: "buyer" }
   | { kind: "ignore" }
   | { kind: "reply"; reply: CategoryReply }
   | { kind: "route" | "escalate"; team: string };
@@ -30,7 +32,7 @@ const isRecord = (v: unknown): v is Record<string, unknown> =>
 const isText = (v: unknown): v is string => typeof v === "string" && v.trim() !== "";
 
 function parseOutcome(field: string, value: unknown): Outcome {
-  if (value === "buyer" || value === "ignore") return { kind: value };
+  if (value === "ignore") return { kind: "ignore" };
   const m = typeof value === "string" ? /^(reply|route|escalate):(.+)$/.exec(value) : null;
   const arg = m?.[2]!.trim();
   if (m?.[1] === "reply" && CATEGORY_REPLIES.includes(arg as CategoryReply)) {
@@ -40,7 +42,7 @@ function parseOutcome(field: string, value: unknown): Outcome {
     return { kind: m[1], team: arg };
   }
   throw new ConfigError(
-    `${field} must be "buyer", "ignore", "reply:<${CATEGORY_REPLIES.join("|")}>", "route:<Team>" or "escalate:<Team>" (Triage Review is reserved); got ${JSON.stringify(value)}`,
+    `${field} must be "ignore", "reply:<${CATEGORY_REPLIES.join("|")}>", "route:<Team>" or "escalate:<Team>" (Triage Review is reserved); got ${JSON.stringify(value)}`,
   );
 }
 

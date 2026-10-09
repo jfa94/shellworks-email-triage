@@ -9,7 +9,7 @@ const valid = () => ({
   confidence: 0.7,
   about_shellworks: ["About Shellworks:", "- Makes jars."],
   categories: {
-    buyer: { label: "Buyer", description: "Wants jars.", outcome: "buyer" },
+    buyer: { label: "Buyer", description: "Wants jars.", outcome: "route:Sales" },
     vendor: { label: "Vendor", description: "Sells services.", outcome: "ignore" },
     licensing: { label: "Licensing", description: "Wants the material.", outcome: "reply:licensing" },
     press: { label: "Press", description: "Journalists.", outcome: "route: Press & Events " },
@@ -30,7 +30,7 @@ test("outcomes are parsed once into their kinds, lines are joined", () => {
   assert.deepEqual(
     Object.values(config.categories).map((c) => c.outcome),
     [
-      { kind: "buyer" },
+      { kind: "route", team: "Sales" },
       { kind: "ignore" },
       { kind: "reply", reply: "licensing" },
       { kind: "route", team: "Press & Events" },

@@ -43,15 +43,15 @@ Nurture is the one deliberate exception. A promising buyer under 10,000 units ge
 
 Jev answers typed questions about a text with probabilities over labels you define. It never writes free text. That fits a job where the output is a decision, not prose.
 
-- **Calibrated probabilities.** A confidence bar only means something if 0.9 really is about 90%. An independent evaluation measured Jev's multi-label answers at ECE 0.028 across 22 datasets ([arXiv 2609.37647](https://arxiv.org/abs/2609.37647)). A chat model's self-reported confidence has no such property.
-- **No free text, so nothing to hallucinate.** Jev can only pick from the labels it is given. It cannot invent a category, promise a price or write a reply. Replies are fixed templates, and an email that says "ignore your instructions" has nothing to instruct.
+- **Calibrated probabilities.** A confidence bar needs 0.9 to mean about 90%. An independent evaluation measured ECE 0.028 across 22 datasets ([arXiv 2609.37647](https://arxiv.org/abs/2609.37647)); a chat model's self-reported confidence has no such guarantee.
+- **No free text, nothing to hallucinate.** Jev only picks from the labels it is given, so it can't invent a category or promise a price. Replies are fixed templates, so an email saying "ignore your instructions" has nothing to act on.
 - **Fast and cheap.**
   - Speed: 0.36 s mean per request, measured independently (same paper).
-  - Cost: the vendor lists $0.042 per million input tokens with output free, about **$0.0001 per email** at our measured ~2,800 tokens. The vendor quotes general LLMs at $0.20–$10 per million, and says it can't rule out that its own price is subsidised ([TypeSafe](https://typesafe.ai/blog/introducing-system-one-models-and-jev)).
-- **Easy to tweak until it is right.** A category is one plain-English sentence in [`triage.config.json`](triage.config.json). There is no training set and no prompt engineering. Edit, restart, replay the sample inbox.
-- **Versus classic NLP or ML classifiers.** These need labelled training data, and Shellworks has 40 sample emails. Jev works zero-shot from label descriptions and still reads nuance, such as "moulder who wants jars" against "moulder who wants pellets", that keyword rules miss.
+  - Cost: about **$0.0001 per email** at ~2,800 tokens, from the vendor's $0.042 per million input tokens (output free) against $0.20–$10 for general LLMs. The vendor says its price may be subsidised ([TypeSafe](https://typesafe.ai/blog/introducing-system-one-models-and-jev)).
+- **Easy to tweak.** A category is one plain-English sentence in [`triage.config.json`](triage.config.json): no training set, no prompt engineering. Edit, restart, replay the sample inbox.
+- **Versus classic NLP/ML.** Those need labelled training data; we have 40 sample emails. Jev works zero-shot from descriptions and reads nuance keyword rules miss, such as a moulder who wants jars versus one who wants pellets.
 
-**Jev only extracts. The rules decide** ([ADR 0001](docs/decisions/0001-jev-extracts-rules-decide.md)). That keeps every decision explainable, and lets policy change without touching the model.
+**Jev only extracts. The rules decide.** That keeps every decision explainable, and lets policy change without touching the model.
 
 The code is TypeScript on Node. The language is incidental: the rules are short, plain code with tests.
 
@@ -74,6 +74,29 @@ POST /enquiries ─▶ validate ─▶ ask Jev 6 questions ─▶ decide ─▶ 
 
 Every question either feeds a rule or tells Sales what to check. Questions that only fed an "urgent" flag were removed: the goal is that each email lands in the right place.
 
+## Categories
+
+Jev classifies each email into one of these, judged by what the sender wants. Each category's outcome is set in `triage.config.json`:
+
+| Category | Who | Outcome |
+|---|---|---|
+| Buyer (direct) | A brand wanting finished packaging for its own products | `route:Sales` |
+| Buyer (intermediary) | A contract manufacturer, filler, co-packer or adviser buying for brand clients | `route:Sales` |
+| Licensing request | Wants to license, process or buy the material itself | `reply:licensing` |
+| Existing customer | Writing about an order, delivery or production issue | `route:Customer Success` |
+| Consumer | An individual wanting a consumer product, such as the cutting board | `reply:consumer` |
+| Supplier | Offers raw materials, compounding or manufacturing capacity | `route:Operations` |
+| Vendor solicitation | Sells unrelated services: recruiting, marketing, freight, compliance | `ignore` |
+| Press & events | Journalists, podcasts, conferences, charities seeking a partner | `route:Press & Events` |
+| Investor | Investors or funds | `route:Founders` |
+| Industry stakeholder | Retailers setting supplier requirements, trade bodies | `route:Founders` |
+| Research | Students, academics, or non-buyers with technical questions | `route:R&D` |
+| Job seeker | Applications and speculative CVs | `reply:careers` |
+| Out of scope | Wants a product Shellworks doesn't make | `reply:out_of_scope` |
+| Legal & safety | Injury reports, legal threats, data-protection requests, regulators | `escalate:Founders` |
+
+An outcome is `route:<Team>`, `reply:<kind>`, `ignore`, or `escalate:<Team>` (acts at any confidence and is never auto-replied).
+
 ## What gets scored
 
 - **Category probabilities.** Jev's distribution over the configured categories.
@@ -89,19 +112,11 @@ The first rule that matches wins:
 
 1. **Escalate categories (legal and safety) go to Founders at any confidence.** Ties resolve towards them, and they are never auto-replied. A missed safety report costs more than any amount of reading.
 2. **If the best Outcome Confidence is below 0.7, the email goes to Triage Review.** A person decides.
-3. **Buyers:**
+3. **Buyers** (anything routed to Sales) are qualified first:
    - If the email probably doesn't say who they are or what they want, send an **Information Request** asking only for what's missing.
    - Otherwise, if it is under 10,000 units a year, or more than a year away with no budget, send a **Nurture** reply.
    - Otherwise, **Sales**.
-4. **Everything else does what its category's outcome says** in the config:
-
-| Outcome in config | Categories today | Result |
-|---|---|---|
-| `buyer` | buyer direct, buyer intermediary | rule 3 |
-| `route:<Team>` | existing customer → Customer Success; supplier → Operations; press → Press & Events; investor, industry stakeholder → Founders; research → R&D | handed to that team |
-| `reply:<kind>` | licensing, consumer, job seeker, out of scope | fixed automated reply |
-| `ignore` | vendor solicitation | logged; nothing sent |
-| `escalate:<Team>` | legal & safety | rule 1 |
+4. **Everything else does what its category's outcome says** in the table above.
 
 Why these choices:
 
@@ -133,14 +148,6 @@ After rewording a description, replay the 40 emails and compare them with the ex
 
 | Case | Outcome |
 |---|---|
-| Converter wants to license or buy pellets | Licensing reply; never Sales |
-| Contract filler or adviser buying for clients | Buyer (intermediary) → Sales |
-| Promising buyer under 10,000 units | Nurture reply |
-| Buyer more than a year away with no budget | Nurture reply |
-| One-line "send specs" from an unknown sender | Information Request, asking only what's missing |
-| Asks for a product Shellworks doesn't make | Out-of-scope reply; Jev judges this against the product facts in the config |
-| Existing customer with a production problem | Customer Success |
-| Safety, legal or data-protection message | Founders, at any confidence, never auto-replied |
 | Reads as two unrelated things (press + research) | Probability splits, so Triage Review |
 | Vendor pitch dressed as a partnership | Ignore only if confident, otherwise Triage Review |
 | Non-English email | Classified as usual; replies are English |

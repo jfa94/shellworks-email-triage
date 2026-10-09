@@ -1,9 +1,9 @@
-import type { Config, Outcome } from "./config.ts";
+import { SALES, type Config, type Outcome } from "./config.ts";
 import type { Enquiry } from "./enquiry.ts";
 import type { Answers, Category } from "./jev.ts";
 import { buildReply, type Missing, type ReplyKind } from "./replies.ts";
 
-// Teams come from triage.config.json, plus "Sales" for buyers and "Triage Review".
+// Teams come from triage.config.json, plus "Triage Review".
 export type Route = string;
 
 export type Flag = "price_cap" | "geography" | "technical_requirement";
@@ -128,7 +128,7 @@ export function decide(config: Config, enquiry: Enquiry, a: Answers): Decision {
   const outcome = best.outcome;
 
   // 3. Buyers: ask, nurture or hand to Sales.
-  if (outcome.kind === "buyer") {
+  if (outcome.kind === "route" && outcome.team === SALES) {
     if (1 - a.enough_info >= config.confidence) {
       const missing = (
         [
@@ -158,7 +158,7 @@ export function decide(config: Config, enquiry: Enquiry, a: Answers): Decision {
           : `Buyer (${fmt(confidence)}), but deciding more than a year out with no budget: nurture reply.`,
       };
     }
-    return { ...common, outcome: "route", route: "Sales", why: `Buyer (${fmt(confidence)}) with enough detail: Sales.` };
+    return { ...common, outcome: "route", route: SALES, why: `Buyer (${fmt(confidence)}) with enough detail: Sales.` };
   }
 
   // 4. Everything else does what its category's outcome says.

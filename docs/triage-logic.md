@@ -8,6 +8,7 @@ The tunable parts are in [`triage.config.json`](../triage.config.json): the conf
 
 - **Confidence is measured on the Outcome, not the category.** Categories whose `outcome` strings are equal share one destination, and their probabilities are added. The same bar (`confidence`, 0.7) gates every probabilistic action: the Outcome, Information Request, Nurture, and the blocker flags. There are no other thresholds.
 - **Escalate.** If an `escalate:<Team>` category is the most likely category, the email goes to that team, whatever its probability. Ties go to the escalate category.
+- **Buyers** are the categories routed to `Sales`; the two rules below apply to them before the email reaches Sales.
 - **Information Request** (buyers only): sent when `1 − enough_info ≥ 0.7`. It always asks for company and application. It asks for volume, timeline or budget only where that signal's top label is `unstated`.
 - **Nurture** (buyers only): sent when P(under 10,000 units a year) ≥ 0.7, or when P(more than a year out) ≥ 0.7 **and** P(no budget) ≥ 0.7. 10,000 is the bottom of the published catalogue minimum (10,000 to 25,000).
 - **Blocker flags** (`price_cap`, `geography`, `technical_requirement`): set when that blocker's probability is ≥ 0.7. They are shown as "Check" on the card and never change the Outcome.

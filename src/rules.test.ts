@@ -24,6 +24,10 @@ const run = (a: Answers, config: Config = CONFIG) => decide(config, enquiry, a);
 const where = (d: ReturnType<typeof run>) =>
   d.outcome === "route" ? `route:${d.route}` : d.outcome === "automated_reply" ? `automated_reply:${d.reply.kind}` : d.outcome;
 const kindOf = (c: Category) => CONFIG.categories[c]!.outcome.kind;
+const isSales = (c: Category) => {
+  const o = CONFIG.categories[c]!.outcome;
+  return o.kind === "route" && o.team === "Sales";
+};
 
 // The shipped config with one category's outcome changed, as an edit to triage.config.json would.
 function edited(category: Category, outcome: string): Config {
@@ -60,12 +64,19 @@ test("editing a category's outcome in the config changes where it goes, with no 
   assert.equal(where(run(answers({ top: "licensing_request", p: 0.3 }), escalated)), "route:Founders");
 });
 
+test("any category routed to Sales gets the buyer rules first", () => {
+  const config = edited("press_events", "route:Sales");
+  const small = answers({ top: "press_events", annual_volume: dist(VOLUMES, "under_10k", 0.9) });
+  assert.equal(where(run(small, config)), "automated_reply:nurture");
+  assert.equal(where(run(answers({ top: "press_events" }), config)), "route:Sales");
+});
+
 test("a category added to the config is classified and routed", () => {
   const config = parseConfig({
     confidence: 0.7,
     about_shellworks: ["Shellworks makes jars."],
     categories: {
-      buyer: { label: "Buyer", description: "Wants jars.", outcome: "buyer" },
+      buyer: { label: "Buyer", description: "Wants jars.", outcome: "route:Sales" },
       partner: { label: "Partner", description: "Wants to co-develop.", outcome: "route:Partnerships" },
     },
   });
@@ -170,8 +181,8 @@ const anyAnswers: fc.Arbitrary<Answers> = fc.record({
   blocker: normalised(BLOCKERS),
   enough_info: fc.double({ min: 0, max: 1, noNaN: true }),
 });
-const mass = (a: Answers, kind: string) =>
-  CATEGORIES.filter((c) => kindOf(c) === kind).reduce((sum, c) => sum + a.category[c]!, 0);
+const salesMass = (a: Answers) =>
+  CATEGORIES.filter(isSales).reduce((sum, c) => sum + a.category[c]!, 0);
 
 test("property: every input yields exactly one well-formed outcome", () => {
   fc.assert(
@@ -209,7 +220,7 @@ test("property: information requests are only for buyers, ignores only for ignor
   fc.assert(
     fc.property(anyAnswers, (a) => {
       const d = run(a);
-      if (d.outcome === "information_request") assert.ok(mass(a, "buyer") >= CONFIG.confidence);
+      if (d.outcome === "information_request") assert.ok(salesMass(a) >= CONFIG.confidence);
       if (d.outcome === "ignore") assert.equal(kindOf(d.category!), "ignore");
     }),
   );

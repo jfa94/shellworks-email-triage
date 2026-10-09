@@ -16,12 +16,12 @@
     "buyer_direct": {
       "label": "Buyer (direct)",
       "description": "A brand that wants finished packaging (jars, closures, caps, droppers) for its own products.",
-      "outcome": "buyer"
+      "outcome": "route:Sales"
     },
     "buyer_intermediary": {
       "label": "Buyer (intermediary)",
       "description": "A contract manufacturer, filler, co-packer or adviser that wants finished packaging on behalf of brand clients.",
-      "outcome": "buyer"
+      "outcome": "route:Sales"
     },
     "licensing_request": {
       "label": "Licensing request",
