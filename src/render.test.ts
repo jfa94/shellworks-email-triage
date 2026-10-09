@@ -54,6 +54,22 @@ test("any body renders within the card width", () => {
   );
 });
 
+test("the card fills the given width and the excerpt grows with it", () => {
+  const body = "word ".repeat(200);
+  const render = (width: number) =>
+    stripVTControlCharacters(renderCard({ ...enquiry, body }, decide(enquiry, answers()), classified, width)).split("\n");
+  const wide = render(200);
+  assert.equal(wide[0]!.length, 200);
+  assert.ok(wide.every((l) => l.length <= 200));
+  assert.ok(wide.find((l) => l.startsWith("  Body"))!.length > 150);
+  assert.ok(render(64).find((l) => l.startsWith("  Body"))!.length <= 64);
+});
+
+test("a tiny width does not hang or throw", () => {
+  const out = renderCard({ ...enquiry, body: "x".repeat(500) }, decide(enquiry, answers()), classified, 5);
+  assert.match(stripVTControlCharacters(out), /Outcome/);
+});
+
 test("the bar is mentioned only when low confidence sends it to Triage Review", () => {
   const low = show({ p: 0.5 });
   assert.match(low, /Type {5}Buyer \(direct\) · 53% sure, acts at 70%/);

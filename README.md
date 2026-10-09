@@ -39,7 +39,7 @@ curl -X POST http://127.0.0.1:3000/enquiries -d '{
 
 All six fields are required strings (empty is allowed); extra fields are ignored. Enquiries are processed one at a time.
 
-The terminal shows a card per enquiry: what came in (from, subject, a two-line body excerpt), the category with one confidence figure, urgency and its reason, buyer signals, anything to check, the full reply text where one would be sent, the Outcome in bold, and the TypeSafe AI tokens used. `acts at 70%` appears only when low confidence sent the enquiry to Triage Review.
+The terminal shows a card per enquiry: what came in (from, subject, a two-line body excerpt), the category with one confidence figure, urgency and its reason, buyer signals, anything to check, the full reply text where one would be sent, the Outcome in bold, and the TypeSafe AI tokens used. `acts at 70%` appears only when low confidence sent the enquiry to Triage Review. Cards fill the terminal width (64 columns when output is not a terminal).
 
 ```
 asking Jev about #17…

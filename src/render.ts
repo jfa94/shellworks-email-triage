@@ -3,10 +3,10 @@ import type { Enquiry } from "./enquiry.ts";
 import type { Category, Classified, Commitment, Timeline, Volume } from "./jev.ts";
 import { CONFIDENCE, type Decision, type Flag } from "./rules.ts";
 
-const WIDTH = 64;
+// Used when stdout is not a terminal (pipes, tests).
+const FALLBACK_WIDTH = 64;
 const INDENT = 11; // two spaces plus a 9-wide label column
 const BODY_LINES = 2;
-const BODY_SCAN = 400;
 
 const CATEGORY_LABEL: Record<Category, string> = {
   buyer_direct: "Buyer (direct)",
@@ -78,10 +78,11 @@ function wrap(text: string, width: number): string[] {
   return lines;
 }
 
-function excerpt(body: string): string[] {
-  const width = WIDTH - INDENT;
-  const lines = wrap(body.slice(0, BODY_SCAN), width);
-  if (lines.length <= BODY_LINES && body.length <= BODY_SCAN) return lines;
+function excerpt(body: string, cardWidth: number): string[] {
+  const width = Math.max(10, cardWidth - INDENT);
+  const scan = cardWidth * (BODY_LINES + 1);
+  const lines = wrap(body.slice(0, scan), width);
+  if (lines.length <= BODY_LINES && body.length <= scan) return lines;
   const kept = lines.slice(0, BODY_LINES);
   const last = kept.pop() ?? "";
   return [...kept, `${last.length >= width ? last.slice(0, width - 1) : last}…`];
@@ -118,7 +119,12 @@ function outcomeLine(d: Decision): string {
   }
 }
 
-export function renderCard(enquiry: Enquiry, d: Decision, classified: Classified | null): string {
+export function renderCard(
+  enquiry: Enquiry,
+  d: Decision,
+  classified: Classified | null,
+  width = process.stdout.columns || FALLBACK_WIDTH,
+): string {
   const rows: string[] = [];
   const row = (label: string, value: string | string[], style?: Parameters<typeof styleText>[0]) => {
     const [first = "", ...rest] = Array.isArray(value) ? value : [value];
@@ -130,11 +136,11 @@ export function renderCard(enquiry: Enquiry, d: Decision, classified: Classified
   };
 
   const head = `━━ #${d.id} · ${d.received} `;
-  rows.push(styleText("cyan", head + "━".repeat(Math.max(3, WIDTH - head.length))));
+  rows.push(styleText("cyan", head + "━".repeat(Math.max(3, width - head.length))));
 
   row("From", `${enquiry.from_name || "(no name)"} <${enquiry.from_email}>`);
   row("Subject", enquiry.subject || "(none)");
-  const body = excerpt(enquiry.body);
+  const body = excerpt(enquiry.body, width);
   if (body.length > 0) row("Body", body);
   row("Type", typeLine(d));
 
