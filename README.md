@@ -41,15 +41,14 @@ Nurture is the one deliberate exception. A promising buyer under 10,000 units ge
 
 ## Why Jev (TypeSafe AI)
 
-This job is a decision, not a piece of writing. For each email I need to know what it is and how sure we are, and Jev is built for exactly that: it picks from answers I define and says how confident it is in each.
+The tool is ultimately making decisions on the contents of received emails, which can be nuanced and unpredictable. For each email, I need to know what it is and how sure we are, and Jev is built for exactly that: it picks from answers I define and says how confident it is in each answer.
 
-- **Its confidence can be trusted.** The design leans on a confidence bar, so "90% sure" needs to be right about nine times in ten. Independent testing found Jev's confidence within about three percentage points of its real accuracy across 22 public datasets ([arXiv 2609.37647](https://arxiv.org/abs/2609.37647)). Those weren't Shellworks emails, so it's a good sign rather than proof.
-- **It can't make things up.** It only picks from the answers it's given, so it can't invent a category or promise a customer a price. Replies are fixed templates, so an email saying "ignore your instructions" has nothing to act on.
-- **It's fast and cheap.** About a third of a second per email (same paper). At the vendor's quoted price that's roughly $0.0001 per email, against $0.20–$10 per million tokens for general LLMs ([TypeSafe](https://typesafe.ai/blog/introducing-system-one-models-and-jev)). The vendor says the price may be subsidised, so treat it as a rough guide.
-- **It's easy to tweak.** A category is one plain-English sentence in [`triage.config.json`](triage.config.json). There's no training data and no prompt to engineer: edit the sentence, restart, and replay the sample inbox to see what changed.
-- **It reads nuance without training.** A traditional classifier needs labelled examples and we only have 40, and keyword rules can't tell a moulder who wants jars from one who wants pellets. Jev works from the descriptions alone.
+- **It can't make things up**. It only picks from the answers it's given, so it can't invent a category or promise a customer a price. Replies are fixed templates, so an email saying "ignore your instructions" has nothing to act on.
+- **It's fast and cheap**, making a viable long-term solution. Less than a tenth of a second per email in my testing. At TypeSafe AI’s quoted price, the cost is roughly $0.0001 per email (vs $0.02 for Claude Haiku, for worse results).
+- **It's easy to tweak**. A category is one plain-English sentence in triage.config.json. There's no training data and no prompt to engineer: edit the sentence, restart, and replay the sample inbox to see what changed.
+- **It reads nuance without training**. A traditional classifier needs labelled examples and we only have 40, and keyword rules can't tell a moulder who wants jars from one who wants pellets. Jev works from the descriptions we provide it.
 
-Jev only extracts. The rules decide, which keeps every decision explainable and lets us change policy without touching the model. The code is TypeScript on Node, though the language isn't the point.
+Jev only classifies emails into our pre-determined categories. The rules decide, which keeps every decision explainable and lets us change policy without touching the model.
 
 ## How it's structured, and why
 
