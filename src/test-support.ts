@@ -1,5 +1,9 @@
+import { loadConfig } from "./config.ts";
 import type { Enquiry } from "./enquiry.ts";
-import { BLOCKER, CATEGORY, COMMITMENT, TIMELINE, VOLUME, type Answers, type Category } from "./jev.ts";
+import { BLOCKER, COMMITMENT, TIMELINE, VOLUME, type Answers, type Category } from "./jev.ts";
+
+// The shipped triage.config.json: tests pin the behaviour Shellworks actually runs.
+export const CONFIG = loadConfig();
 
 export const makeEnquiry = (id = "1"): Enquiry => ({
   id,
@@ -10,7 +14,7 @@ export const makeEnquiry = (id = "1"): Enquiry => ({
   body: "b",
 });
 
-export const CATEGORIES = Object.keys(CATEGORY) as Category[];
+export const CATEGORIES = Object.keys(CONFIG.categories);
 export const VOLUMES = Object.keys(VOLUME) as (keyof typeof VOLUME)[];
 export const TIMELINES = Object.keys(TIMELINE) as (keyof typeof TIMELINE)[];
 export const COMMITMENTS = Object.keys(COMMITMENT) as (keyof typeof COMMITMENT)[];
@@ -35,8 +39,6 @@ export function answers(over: Partial<Answers> & { top?: Category; p?: number } 
     decision_timeline: dist(TIMELINES, "this_quarter", 0.9),
     commitment: dist(COMMITMENTS, "funded_project", 0.9),
     blocker: dist(BLOCKERS, "none", 0.9),
-    hard_deadline: 0.05,
-    chasing: 0.05,
     enough_info: 0.95,
     ...rest,
   };

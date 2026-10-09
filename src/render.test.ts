@@ -5,13 +5,13 @@ import fc from "fast-check";
 import type { Classified } from "./jev.ts";
 import { renderCard } from "./render.ts";
 import { decide, failedDecision } from "./rules.ts";
-import { answers, BLOCKERS, dist, makeEnquiry, VOLUMES } from "./test-support.ts";
+import { answers, BLOCKERS, CONFIG, dist, makeEnquiry, VOLUMES } from "./test-support.ts";
 
 const classified: Classified = { answers: answers(), model: "jev-test", usage: { input_tokens: 2287, output_tokens: 452 } };
 const enquiry = { ...makeEnquiry("5"), received: "19/08/2026", subject: "Caps", body: "We need 90,000 caps." };
 
 const show = (over: Parameters<typeof answers>[0], e = enquiry) =>
-  stripVTControlCharacters(renderCard(e, decide(e, answers(over)), classified));
+  stripVTControlCharacters(renderCard(CONFIG, e, decide(CONFIG, e, answers(over)), classified));
 const lines = (out: string) => out.split("\n");
 
 test("the card shows what came in and what was decided", () => {
@@ -57,7 +57,7 @@ test("any body renders within the card width", () => {
 test("the card fills the given width and the excerpt grows with it", () => {
   const body = "word ".repeat(200);
   const render = (width: number) =>
-    stripVTControlCharacters(renderCard({ ...enquiry, body }, decide(enquiry, answers()), classified, width)).split("\n");
+    stripVTControlCharacters(renderCard(CONFIG, { ...enquiry, body }, decide(CONFIG, enquiry, answers()), classified, width)).split("\n");
   const wide = render(200);
   assert.equal(wide[0]!.length, 200);
   assert.ok(wide.every((l) => l.length <= 200));
@@ -66,7 +66,7 @@ test("the card fills the given width and the excerpt grows with it", () => {
 });
 
 test("a tiny width does not hang or throw", () => {
-  const out = renderCard({ ...enquiry, body: "x".repeat(500) }, decide(enquiry, answers()), classified, 5);
+  const out = renderCard(CONFIG, { ...enquiry, body: "x".repeat(500) }, decide(CONFIG, enquiry, answers()), classified, 5);
   assert.match(stripVTControlCharacters(out), /Outcome/);
 });
 
@@ -80,7 +80,6 @@ test("the bar is mentioned only when low confidence sends it to Triage Review", 
 test("legal and safety always says where it goes, whatever the confidence", () => {
   const out = show({ top: "legal_safety", p: 0.4 });
   assert.match(out, /Type {5}Legal & safety · 40% sure, always goes to Founders/);
-  assert.match(out, /Urgent {3}always for legal & safety/);
   assert.match(out, /Outcome {2}FOUNDERS/);
 });
 
@@ -88,14 +87,6 @@ test("the Buyer row appears for buyers only and shows unstated signals", () => {
   assert.match(show({}), /Buyer {4}150k–1M\/yr · deciding this quarter · funded project/);
   assert.match(show({ annual_volume: dist(VOLUMES, "unstated", 0.9) }), /Buyer {4}volume not stated ·/);
   assert.doesNotMatch(show({ top: "existing_customer" }), /Buyer {4}/);
-});
-
-test("urgent states why", () => {
-  assert.match(show({ hard_deadline: 0.9 }), /Urgent {3}deadline$/m);
-  assert.match(show({ chasing: 0.9 }), /Urgent {3}chasing$/m);
-  assert.match(show({ hard_deadline: 0.9, chasing: 0.9 }), /Urgent {3}deadline, chasing$/m);
-  assert.match(show({ top: "existing_customer" }), /Urgent {3}always for Customer Success$/m);
-  assert.doesNotMatch(show({}), /Urgent/);
 });
 
 test("blockers are listed as plain checks", () => {
@@ -112,17 +103,17 @@ test("the outcome row names each kind of outcome", () => {
 });
 
 test("reply cards print the full reply text", () => {
-  const d = decide(enquiry, answers({ top: "licensing_request" }));
+  const d = decide(CONFIG, enquiry, answers({ top: "licensing_request" }));
   assert.ok(d.outcome === "automated_reply");
-  const out = stripVTControlCharacters(renderCard(enquiry, d, classified));
+  const out = stripVTControlCharacters(renderCard(CONFIG, enquiry, d, classified));
   for (const line of d.reply.text.split("\n")) assert.ok(out.includes(line), line);
 });
 
 test("a failed classification shows its error, no signals and no tokens", () => {
-  const out = stripVTControlCharacters(renderCard(enquiry, failedDecision(enquiry, "timeout"), null));
+  const out = stripVTControlCharacters(renderCard(CONFIG, enquiry, failedDecision(enquiry, "timeout"), null));
   assert.match(out, /Type {5}not classified/);
   assert.match(out, /Error {4}timeout/);
   assert.match(out, /Outcome {2}TRIAGE REVIEW/);
   assert.match(out, /no Jev tokens used/);
-  assert.doesNotMatch(out, /Buyer {4}|Urgent/);
+  assert.doesNotMatch(out, /Buyer {4}/);
 });

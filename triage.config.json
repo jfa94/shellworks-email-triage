@@ -1,0 +1,87 @@
+{
+  "confidence": 0.7,
+  "about_shellworks": [
+    "About Shellworks:",
+    "- Shellworks manufactures finished rigid packaging and components end to end from its own material, Vivomer, a 100% bio-based PHA that is home-compostable and food-contact certified. It does not license the material or sell it as pellets or resin.",
+    "- Products made today: jars, dropper bottles, dropper caps and pipettes, closures and caps, perfume caps, bottles (for example a 500 ml laundry bottle), refillable containers and cups, by injection moulding, blow moulding and extrusion. It also sells a consumer cutting board. Vivomer can mimic ABS, HDPE, PP, TPE and silicone.",
+    "- Main market: personal care and cosmetics packaging.",
+    "- Temperature: stable from -20C to 120C with specific grades, so it covers freezing, freeze/thaw and hot-filling. Microwave use is not stated.",
+    "- Barrier and durability: finished parts hold liquids without a liner, resist surfactants and cosmetic oils, are stable in water and dishwasher safe, and have a shelf life over 3 years for liquids.",
+    "- Processing and finishing: runs on standard injection moulding, blow moulding and extrusion equipment with adjusted shrinkage; can be coloured with natural pigments and finished by screen printing or hot foiling.",
+    "- Certification: FDA and EU 10/2011 food contact; EN 13432 and home compostable (TUV Austria); tested for marine (ASTM D6691) and landfill (ASTM D5511) biodegradation.",
+    "- Manufacturing is in the UK, the EU and the USA.",
+    "- Catalogue formats start at 10,000 to 25,000 units."
+  ],
+  "categories": {
+    "buyer_direct": {
+      "label": "Buyer (direct)",
+      "description": "A brand that wants finished packaging (jars, closures, caps, droppers) for its own products.",
+      "outcome": "buyer"
+    },
+    "buyer_intermediary": {
+      "label": "Buyer (intermediary)",
+      "description": "A contract manufacturer, filler, co-packer or adviser that wants finished packaging on behalf of brand clients.",
+      "outcome": "buyer"
+    },
+    "licensing_request": {
+      "label": "Licensing request",
+      "description": "Wants to license, process, mould or buy the Shellworks material itself (pellets, resin, compounds), or to become an approved processor.",
+      "outcome": "reply:licensing"
+    },
+    "existing_customer": {
+      "label": "Existing customer",
+      "description": "An existing Shellworks customer writing about an order, delivery or production issue.",
+      "outcome": "route:Customer Success"
+    },
+    "consumer": {
+      "label": "Consumer",
+      "description": "An individual who wants to buy a Shellworks consumer product, such as the cutting board.",
+      "outcome": "reply:consumer"
+    },
+    "relevant_supplier": {
+      "label": "Supplier",
+      "description": "Offers raw materials, compounding or manufacturing capacity that Shellworks could use to make its products.",
+      "outcome": "route:Operations"
+    },
+    "vendor_solicitation": {
+      "label": "Vendor solicitation",
+      "description": "Sells unrelated services to Shellworks: recruiting, marketing, freight, IP monitoring, compliance tooling and similar.",
+      "outcome": "ignore"
+    },
+    "press_events": {
+      "label": "Press & events",
+      "description": "Journalists, podcasts, conferences, and awareness campaigns or charities seeking a partner.",
+      "outcome": "route:Press & Events"
+    },
+    "investor": {
+      "label": "Investor",
+      "description": "Investors or funds.",
+      "outcome": "route:Founders"
+    },
+    "industry_stakeholder": {
+      "label": "Industry stakeholder",
+      "description": "Retailers setting supplier requirements, trade bodies and similar organisations shaping the industry.",
+      "outcome": "route:Founders"
+    },
+    "research": {
+      "label": "Research",
+      "description": "Students, academics and research consortia, or non-buyers with technical questions about the material (for example recyclers).",
+      "outcome": "route:R&D"
+    },
+    "job_seeker": {
+      "label": "Job seeker",
+      "description": "Job applications or speculative CVs.",
+      "outcome": "reply:careers"
+    },
+    "out_of_scope": {
+      "label": "Out of scope",
+      "description": "Wants a product that is not among the products Shellworks makes.",
+      "outcome": "reply:out_of_scope"
+    },
+    "legal_safety": {
+      "label": "Legal & safety",
+      "description": "Safety or injury reports, legal threats, data-protection requests, or regulator inquiries.",
+      "outcome": "escalate:Founders"
+    }
+  }
+}

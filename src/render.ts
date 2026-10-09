@@ -1,29 +1,13 @@
 import { styleText } from "node:util";
 import type { Enquiry } from "./enquiry.ts";
-import type { Category, Classified, Commitment, Timeline, Volume } from "./jev.ts";
-import { CONFIDENCE, type Decision, type Flag } from "./rules.ts";
+import type { Config } from "./config.ts";
+import type { Classified, Commitment, Timeline, Volume } from "./jev.ts";
+import type { Decision, Flag } from "./rules.ts";
 
 // Used when stdout is not a terminal (pipes, tests).
 const FALLBACK_WIDTH = 64;
 const INDENT = 11; // two spaces plus a 9-wide label column
 const BODY_LINES = 2;
-
-const CATEGORY_LABEL: Record<Category, string> = {
-  buyer_direct: "Buyer (direct)",
-  buyer_intermediary: "Buyer (intermediary)",
-  licensing_request: "Licensing request",
-  existing_customer: "Existing customer",
-  consumer: "Consumer",
-  relevant_supplier: "Supplier",
-  vendor_solicitation: "Vendor solicitation",
-  press_events: "Press & events",
-  investor: "Investor",
-  industry_stakeholder: "Industry stakeholder",
-  research: "Research",
-  job_seeker: "Job seeker",
-  out_of_scope: "Out of scope",
-  legal_safety: "Legal & safety",
-};
 
 const VOLUME_LABEL: Record<Volume, string> = {
   under_10k: "under 10k/yr",
@@ -49,7 +33,7 @@ const COMMITMENT_LABEL: Record<Commitment, string> = {
   unstated: "budget not stated",
 };
 
-const CHECK_LABEL: Record<Exclude<Flag, "urgent">, string> = {
+const CHECK_LABEL: Record<Flag, string> = {
   price_cap: "price cap",
   geography: "region",
   technical_requirement: "technical requirement",
@@ -88,22 +72,13 @@ function excerpt(body: string, cardWidth: number): string[] {
   return [...kept, `${last.length >= width ? last.slice(0, width - 1) : last}…`];
 }
 
-// Mirrors flagsFor in rules.ts: destination reasons first, then what Jev read in the text.
-function urgentReason(d: Decision): string | null {
-  if (!d.flags.includes("urgent")) return null;
-  if (d.category === "legal_safety") return "always for legal & safety";
-  if (d.outcome === "route" && d.route === "Customer Success") return "always for Customer Success";
-  const s = d.signals;
-  const reasons = [s && s.hard_deadline >= CONFIDENCE && "deadline", s && s.chasing >= CONFIDENCE && "chasing"];
-  return reasons.filter(Boolean).join(", ");
-}
-
-function typeLine(d: Decision): string {
+function typeLine(config: Config, d: Decision): string {
   if (!d.signals || !d.category) return "not classified";
-  const sure = `${CATEGORY_LABEL[d.category]} · ${percent(d.outcome_confidence!)} sure`;
-  if (d.category === "legal_safety") return `${sure}, always goes to Founders`;
+  const category = config.categories[d.category]!;
+  const sure = `${category.label} · ${percent(d.outcome_confidence!)} sure`;
+  if (category.outcome.kind === "escalate") return `${sure}, always goes to ${category.outcome.team}`;
   const lowConfidence = d.outcome === "route" && d.route === "Triage Review";
-  return lowConfidence ? `${sure}, acts at ${percent(CONFIDENCE)}` : sure;
+  return lowConfidence ? `${sure}, acts at ${percent(config.confidence)}` : sure;
 }
 
 function outcomeLine(d: Decision): string {
@@ -120,6 +95,7 @@ function outcomeLine(d: Decision): string {
 }
 
 export function renderCard(
+  config: Config,
   enquiry: Enquiry,
   d: Decision,
   classified: Classified | null,
@@ -142,15 +118,13 @@ export function renderCard(
   row("Subject", enquiry.subject || "(none)");
   const body = excerpt(enquiry.body, width);
   if (body.length > 0) row("Body", body);
-  row("Type", typeLine(d));
+  row("Type", typeLine(config, d));
 
-  const urgent = urgentReason(d);
-  if (urgent !== null) row("Urgent", urgent, ["red", "bold"]);
-  if (d.signals && (d.category === "buyer_direct" || d.category === "buyer_intermediary")) {
+  if (d.signals && d.category && config.categories[d.category]!.outcome.kind === "buyer") {
     const s = d.signals;
     row("Buyer", [VOLUME_LABEL[s.annual_volume.label as Volume], TIMELINE_LABEL[s.decision_timeline.label as Timeline], COMMITMENT_LABEL[s.commitment.label as Commitment]].join(" · "));
   }
-  const checks = d.flags.filter((f): f is Exclude<Flag, "urgent"> => f !== "urgent").map((f) => CHECK_LABEL[f]);
+  const checks = d.flags.map((f) => CHECK_LABEL[f]);
   if (checks.length > 0) row("Check", checks.join(", "), "yellow");
   if (d.error) row("Error", d.error, "red");
   if ("reply" in d) row("Reply", d.reply.text.split("\n"), "dim");

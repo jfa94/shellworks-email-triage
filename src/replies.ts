@@ -1,10 +1,7 @@
-export type ReplyKind =
-  | "licensing"
-  | "consumer"
-  | "careers"
-  | "out_of_scope"
-  | "nurture"
-  | "information_request";
+// Replies a category can be configured to send; nurture and information requests come from the buyer rules.
+export const CATEGORY_REPLIES = ["licensing", "consumer", "careers", "out_of_scope"] as const;
+export type CategoryReply = (typeof CATEGORY_REPLIES)[number];
+export type ReplyKind = CategoryReply | "nurture" | "information_request";
 
 // What an Information Request may still ask for, beyond company and application.
 export type Missing = "volume" | "timeline" | "budget";

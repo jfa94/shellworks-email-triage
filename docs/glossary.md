@@ -3,7 +3,7 @@ context: root
 purpose: Decide what should happen to each inbound enquiry Shellworks receives, so no person has to read them all.
 scope:
   in: inbound enquiries, how they are classified and routed, and the automated replies sent on Shellworks' behalf
-  out: the work the receiving team does after an enquiry is routed; outbound sales; existing-customer account management; scoring or ranking enquiries
+  out: the work the receiving team does after an enquiry is routed; outbound sales; existing-customer account management; lead scores, ranking or prioritising enquiries
 last-reviewed: 2026-10-09
 ```
 
@@ -70,6 +70,17 @@ last-reviewed: 2026-10-09
 - **examples**: A supplements brand deciding this month is handed to Sales. A one-line "send specs" from an unknown sender receives an Information Request.
 - **relationships**: belongs to an Enquiry; may name a Route.
 
+### Outcome Confidence
+
+- **type**: Value Object
+- **status**: draft
+- **definition**: How likely it is that an Enquiry belongs with a given Outcome, counting together every Category that leads to that Outcome. It is the score the triage acts on: it acts on an Outcome only when its Outcome Confidence reaches the confidence bar.
+- **invariants**:
+  - Measured on the Outcome, not on any single Category.
+  - Below the confidence bar, the Enquiry goes to Triage Review, unless it is a Legal & Safety Enquiry.
+- **examples**: A message that is 50% likely from a brand and 40% likely from a contract filler is 90% likely to belong with Sales. Counter-example: a lead score ranking how valuable a buyer is; the triage does not produce one.
+- **relationships**: measured for each Outcome of an Enquiry; decides between acting and Triage Review.
+
 ### Automated Reply
 
 - **type**: Policy
@@ -119,7 +130,7 @@ last-reviewed: 2026-10-09
 - **status**: draft
 - **definition**: An enquiry reporting a safety issue or injury, threatening legal action, making a data-protection request, or coming from a regulator.
 - **invariants**:
-  - When it is the most likely Category, always reaches Founders, flagged urgent, even if that likelihood is low.
+  - When it is the most likely Category, always reaches Founders, even if that likelihood is low.
   - Never auto-replied and never ignored.
 - **examples**: A customer reporting a product shattered and caused injury.
 - **relationships**: a Category of Enquiry.

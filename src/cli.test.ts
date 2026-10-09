@@ -6,7 +6,7 @@ import { stripVTControlCharacters } from "node:util";
 import { APIConnectionError, APIError, AuthenticationError } from "@typesafe-ai/sdk";
 import { createServer, triageOne } from "./cli.ts";
 import type { Ask } from "./jev.ts";
-import { answers, makeEnquiry } from "./test-support.ts";
+import { answers, CONFIG, makeEnquiry } from "./test-support.ts";
 
 const ok: Ask = async () => ({ answers: answers(), model: "jev-test", usage: { input_tokens: 120, output_tokens: 8 } });
 const failWith = (err: Error): Ask => async () => {
@@ -15,14 +15,14 @@ const failWith = (err: Error): Ask => async () => {
 const body = { id: "7", received: "2026-09-01", from_name: "Sam Lee", from_email: "sam@example.com", subject: "Jars", body: "Hi" };
 
 test("triageOne returns the decision and what Jev used", async () => {
-  const { decision, classified } = await triageOne(makeEnquiry("1"), ok);
+  const { decision, classified } = await triageOne(CONFIG, makeEnquiry("1"), ok);
   assert.equal(decision.outcome === "route" && decision.route, "Sales");
   assert.equal(classified?.usage.input_tokens, 120);
 });
 
 test("a transient failure becomes a Triage Review decision with no usage", async () => {
   for (const err of [new APIConnectionError("offline"), APIError.fromResponse(429, null, new Headers()), APIError.fromResponse(503, null, new Headers())]) {
-    const { decision, classified } = await triageOne(makeEnquiry("1"), failWith(err));
+    const { decision, classified } = await triageOne(CONFIG, makeEnquiry("1"), failWith(err));
     assert.equal(decision.outcome === "route" && decision.route, "Triage Review");
     assert.match(decision.why, /classification failed/);
     assert.equal(classified, null);
@@ -33,14 +33,14 @@ test("systemic failures are rethrown instead of routed", async () => {
   const auth = APIError.fromResponse(401, null, new Headers());
   assert.ok(auth instanceof AuthenticationError);
   for (const err of [auth, APIError.fromResponse(400, null, new Headers()), new TypeError("unexpected response")]) {
-    await assert.rejects(triageOne(makeEnquiry("1"), failWith(err)), (e) => e === err);
+    await assert.rejects(triageOne(CONFIG, makeEnquiry("1"), failWith(err)), (e) => e === err);
   }
 });
 
 // Starts the server on a free port, runs `fn`, and always closes it.
 async function withServer(ask: Ask, fn: (url: string, lines: string[]) => Promise<void>) {
   const lines: string[] = [];
-  const server = createServer(ask, (l) => lines.push(stripVTControlCharacters(l)));
+  const server = createServer(CONFIG, ask, (l) => lines.push(stripVTControlCharacters(l)));
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
   try {

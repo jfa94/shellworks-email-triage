@@ -7,13 +7,13 @@ inbound mail ──▶ webhook ──▶ guard ──▶ askJev ──▶ decide
                                                   (unchanged)
 ```
 
-`decide` and the reply templates are reused as they are. The `Decision` object (`outcome`, `route`, `reply`, `flags`, `why`, `error`) is the contract for the effect stage; the demo prints it as a card and the cloud version acts on it.
+`decide`, `triage.config.json` and the reply templates are reused as they are. The `Decision` object (`outcome`, `route`, `reply`, `flags`, `why`, `error`) is the contract for the effect stage; the demo prints it as a card and the cloud version acts on it.
 
 ## Effects by outcome
 
 | Outcome | Effect |
 |---|---|
-| route | Forward the original message to the team's mailbox or label it in the shared inbox. Prefix urgent ones. Triage Review goes to a person with the `why` attached. |
+| route | Forward the original message to the team's mailbox or label it in the shared inbox. Triage Review goes to a person with the `why` attached. |
 | information_request / automated_reply | Send the templated text from a no-reply-style address that accepts replies. |
 | ignore | Archive with a label; send nothing. |
 
@@ -36,5 +36,4 @@ A reply to an Information Request is a continuation, not a new enquiry. Re-run t
 ## Open points
 
 - Which mailbox or helpdesk each Route maps to (Routes are labels today).
-- Whether Customer Success wants a phone or chat alert for urgent items.
 - Retention of stored probabilities for audit.

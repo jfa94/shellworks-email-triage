@@ -24,3 +24,5 @@ Jev answers a fixed set of eight typed questions per enquiry (category, annual v
 - Policy lives in one table and one rule order, covered by unit and property tests that need no network.
 - The `SHELLWORKS` product facts and the category label descriptions are what Jev reads, so editing them changes behaviour and needs a fresh live check against the sample inbox.
 - Extra questions cost nothing per call but each one is a signal the rules must explain; add one only when a rule needs it.
+
+Update 2026-10-09: the urgent flag was removed, and with it the `hard_deadline` and `chasing` questions, leaving six. The confidence bar, the categories (their descriptions and outcomes) and the Shellworks facts moved to `triage.config.json`. The rule order stays in `decide`.

@@ -1,6 +1,7 @@
 import { createServer as createHttpServer, type Server } from "node:http";
 import { parseArgs, styleText } from "node:util";
 import { APIConnectionError, InternalServerError, RateLimitError, TypeSafeClient } from "@typesafe-ai/sdk";
+import { loadConfig, type Config } from "./config.ts";
 import { EnquiryError, parseEnquiry, type Enquiry } from "./enquiry.ts";
 import { askJev, type Ask, type Classified } from "./jev.ts";
 import { renderCard } from "./render.ts";
@@ -15,12 +16,13 @@ const isTransient = (err: unknown) =>
   err instanceof APIConnectionError || err instanceof RateLimitError || err instanceof InternalServerError;
 
 export async function triageOne(
+  config: Config,
   enquiry: Enquiry,
   ask: Ask,
 ): Promise<{ decision: Decision; classified: Classified | null }> {
   try {
     const classified = await ask(enquiry);
-    return { decision: decide(enquiry, classified.answers), classified };
+    return { decision: decide(config, enquiry, classified.answers), classified };
   } catch (err) {
     if (!isTransient(err)) throw err;
     const decision = failedDecision(enquiry, err instanceof Error ? err.message : String(err));
@@ -41,7 +43,7 @@ async function readBody(req: AsyncIterable<Buffer | string>): Promise<string | n
 }
 
 // The response says whether the enquiry was triaged, never where it went: the result is printed.
-export function createServer(ask: Ask, print: (line: string) => void = console.log): Server {
+export function createServer(config: Config, ask: Ask, print: (line: string) => void = console.log): Server {
   // ponytail: one enquiry at a time keeps cards from interleaving; a queue is the upgrade.
   let tail: Promise<unknown> = Promise.resolve();
 
@@ -69,8 +71,8 @@ export function createServer(ask: Ask, print: (line: string) => void = console.l
     const turn = tail.then(async () => {
       print(styleText("dim", `asking Jev about #${enquiry.id}…`));
       try {
-        const { decision, classified } = await triageOne(enquiry, ask);
-        print(renderCard(enquiry, decision, classified) + "\n");
+        const { decision, classified } = await triageOne(config, enquiry, ask);
+        print(renderCard(config, enquiry, decision, classified) + "\n");
         return 204;
       } catch (err) {
         print(styleText("red", `  ✖ Jev error: ${err instanceof Error ? err.message : String(err)}\n`));
@@ -94,12 +96,14 @@ async function main(argv: string[]): Promise<number> {
     console.error(USAGE);
     return 1;
   }
+  // Read once at startup: edit triage.config.json, then restart to apply.
+  const config = loadConfig();
   if (!process.env.TYPESAFE_API_KEY?.trim()) {
     throw new Error("TYPESAFE_API_KEY is not set; add it to .env");
   }
 
   const client = new TypeSafeClient();
-  const server = createServer((enquiry) => askJev(client, enquiry));
+  const server = createServer(config, (enquiry) => askJev(client, config, enquiry));
   await new Promise<void>((resolve, reject) => {
     server.once("error", reject);
     server.listen(port, "127.0.0.1", resolve);
