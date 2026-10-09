@@ -47,7 +47,7 @@ Information Requests go only to buyers. A thin message from a vendor is still ig
 
 Flags help the receiving person; they never change the Outcome.
 
-- `urgent`: P(hard deadline) ≥ 0.7, P(chasing) ≥ 0.7, or the destination is Customer Success or legal and safety. Urgent cards show `URGENT` in the header.
+- `urgent`: P(hard deadline) ≥ 0.7, P(chasing) ≥ 0.7, or the destination is Customer Success or legal and safety. Urgent cards show an `Urgent` row with the reason (deadline, chasing, or the destination rule).
 - `price_cap`, `geography`, `technical_requirement`: that blocker's probability ≥ 0.7. They tell Sales what to check first.
 
 ## Replies

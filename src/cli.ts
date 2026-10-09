@@ -3,7 +3,7 @@ import { parseArgs, styleText } from "node:util";
 import { APIConnectionError, InternalServerError, RateLimitError, TypeSafeClient } from "@typesafe-ai/sdk";
 import { EnquiryError, parseEnquiry, type Enquiry } from "./enquiry.ts";
 import { askJev, type Ask, type Classified } from "./jev.ts";
-import { renderDecision } from "./render.ts";
+import { renderCard } from "./render.ts";
 import { decide, failedDecision, type Decision } from "./rules.ts";
 
 const USAGE = "Usage: triage [--port N]";
@@ -27,9 +27,6 @@ export async function triageOne(
     return { decision, classified: null };
   }
 }
-
-const tokenLine = ({ model, usage: u }: Classified) =>
-  `TypeSafe AI tokens: ${u.input_tokens} in + ${u.output_tokens} out = ${u.input_tokens + u.output_tokens} (${model})`;
 
 async function readBody(req: AsyncIterable<Buffer | string>): Promise<string | null> {
   const chunks: Buffer[] = [];
@@ -70,12 +67,10 @@ export function createServer(ask: Ask, print: (line: string) => void = console.l
     }
 
     const turn = tail.then(async () => {
-      print(styleText("bold", `← #${enquiry.id}`) + `  ${enquiry.from_name} <${enquiry.from_email}>  "${enquiry.subject}"`);
-      print(styleText("dim", "  asking Jev…"));
+      print(styleText("dim", `asking Jev about #${enquiry.id}…`));
       try {
         const { decision, classified } = await triageOne(enquiry, ask);
-        print(renderDecision(decision));
-        print(styleText("dim", classified ? `     ${tokenLine(classified)}\n` : "     no Jev tokens used\n"));
+        print(renderCard(enquiry, decision, classified) + "\n");
         return 204;
       } catch (err) {
         print(styleText("red", `  ✖ Jev error: ${err instanceof Error ? err.message : String(err)}\n`));
@@ -100,7 +95,7 @@ async function main(argv: string[]): Promise<number> {
     return 1;
   }
   if (!process.env.TYPESAFE_API_KEY?.trim()) {
-    throw new Error("TYPESAFE_API_KEY is not set; add it to .env or .env.local");
+    throw new Error("TYPESAFE_API_KEY is not set; add it to .env");
   }
 
   const client = new TypeSafeClient();

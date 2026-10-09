@@ -12,7 +12,7 @@ Needs Node 24.2 or later, developed on 26 (runs TypeScript directly) and pnpm.
 pnpm install
 ```
 
-Put your key in `.env` or `.env.local` (not committed):
+Put your key in `.env` (not committed):
 
 ```
 TYPESAFE_API_KEY=...
@@ -39,17 +39,21 @@ curl -X POST http://127.0.0.1:3000/enquiries -d '{
 
 All six fields are required strings (empty is allowed); extra fields are ignored. Enquiries are processed one at a time.
 
-The terminal shows each step and a card with the destination, category, confidence, signals, why, the full reply text where one would be sent, and the TypeSafe AI tokens used:
+The terminal shows a card per enquiry: what came in (from, subject, a two-line body excerpt), the category with one confidence figure, urgency and its reason, buyer signals, anything to check, the full reply text where one would be sent, the Outcome in bold, and the TypeSafe AI tokens used. `acts at 70%` appears only when low confidence sent the enquiry to Triage Review.
 
 ```
-← #1  Maren Voss <maren@lumenbotanicals.com>  "Packaging enquiry"
-  asking Jev…
-━━ SALES ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- #1  Maren Voss · lumenbotanicals.com
-     buyer_direct 1.00 · outcome 1.00
-     volume 150k_1m · decision this_quarter
-     why: Buyer (1.00) with enough detail: Sales.
-     TypeSafe AI tokens: 2287 in + 452 out = 2739 (jev-1.13.0)
+asking Jev about #17…
+━━ #17 · 19/08/2026 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  From     Claire Moreau <claire@maisonlereve.fr>
+  Subject  Caps for our new fragrance line
+  Body     We are launching a fragrance in Q1 and need 90,000
+           perfume caps. Could you quote by Thursday?
+  Type     Buyer (direct) · 96% sure
+  Urgent   deadline
+  Buyer    10k–150k/yr · deciding this quarter · budget not stated
+  Check    technical requirement
+  Outcome  SALES
+  2,739 tokens · jev-1.13.0
 ```
 
 ## Send from the sample inbox

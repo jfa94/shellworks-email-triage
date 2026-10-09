@@ -59,9 +59,10 @@ test("a valid POST is triaged, answered 204 and printed with its token usage", a
     const res = await post(url, body);
     assert.equal(res.status, 204);
     const out = lines.join("\n");
-    assert.match(out, /← #7 {2}Sam Lee <sam@example\.com> {2}"Jars"/);
-    assert.match(out, /━━ SALES /);
-    assert.match(out, /TypeSafe AI tokens: 120 in \+ 8 out = 128 \(jev-test\)/);
+    assert.match(out, /━━ #7 · 2026-09-01 /);
+    assert.match(out, /Subject {2}Jars/);
+    assert.match(out, /Outcome {2}SALES/);
+    assert.match(out, /128 tokens · jev-test/);
   });
 });
 
@@ -83,7 +84,7 @@ test("bad requests are rejected without calling Jev", async () => {
 test("a transient Jev failure is 204 and shown as Triage Review", async () => {
   await withServer(failWith(new APIConnectionError("offline")), async (url, lines) => {
     assert.equal((await post(url, body)).status, 204);
-    assert.match(lines.join("\n"), /━━ TRIAGE REVIEW /);
+    assert.match(lines.join("\n"), /Outcome {2}TRIAGE REVIEW/);
   });
 });
 
@@ -110,8 +111,8 @@ test("concurrent requests print one whole card at a time", async () => {
   };
   await withServer(slow, async (url, lines) => {
     await Promise.all([post(url, body), post(url, { ...body, id: "8" })]);
-    const heads = lines.map((l, i) => (l.startsWith("← #") ? i : -1)).filter((i) => i >= 0);
-    const tokens = lines.map((l, i) => (l.includes("TypeSafe AI tokens") ? i : -1)).filter((i) => i >= 0);
+    const heads = lines.map((l, i) => (l.startsWith("asking Jev about #") ? i : -1)).filter((i) => i >= 0);
+    const tokens = lines.map((l, i) => (l.includes(" tokens · ") ? i : -1)).filter((i) => i >= 0);
     assert.equal(heads.length, 2);
     assert.ok(tokens[0]! < heads[1]!, "first card finishes before the second starts");
   });
