@@ -1,0 +1,20 @@
+{
+  "name": "shellworks-email-triage",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "triage": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/cli.ts",
+    "send": "node src/send.ts",
+    "test": "node --test \"src/**/*.test.ts\"",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@typesafe-ai/sdk": "^0.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "fast-check": "^4.10.2",
+    "typescript": "^7.0.2"
+  }
+}
